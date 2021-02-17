@@ -23,7 +23,8 @@ public class UsersGamesController extends AbstractController<UsersGames>{
 		String senderLogin = context.basicAuthCredentials().getUsername();
 		String senderPassword= context.basicAuthCredentials().getPassword();
 		User user = service.findUserByLogin(senderLogin);
-		return (BCrypt.checkpw(senderPassword, model.getUserId().getPassword()) && model.getUserId().getLogin().equals(senderLogin)
+		System.out.println(  );
+		return ((BCrypt.checkpw(senderPassword, user.getPassword()))
 			|| user.getRole().equals(User.FIELD_ADMIN));
 	}
 	@Override
@@ -48,8 +49,10 @@ public class UsersGamesController extends AbstractController<UsersGames>{
         try {
             UsersGames model = objectMapper.readValue(context.body(), UsersGames.class);
             if(checkRights(model, context)) {
-	            context.result(objectMapper.writeValueAsString(model));
-	            context.status(201);
+				service.save(model);
+				UsersGames saved = service.findById(model.getId());
+				context.result(objectMapper.writeValueAsString(saved));
+				context.status(201);
             } else {
             	context.status(404);
             }

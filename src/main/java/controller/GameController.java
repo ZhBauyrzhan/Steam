@@ -52,8 +52,10 @@ public class GameController extends AbstractController<Game>{
         try {
             Game model = objectMapper.readValue(context.body(), Game.class);
             if(checkRights(model, context)) {
-	            context.result(objectMapper.writeValueAsString(model));
-	            context.status(201);
+                service.save(model);
+                Game saved = service.findById(model.getId());
+                context.result(objectMapper.writeValueAsString(saved));
+                context.status(201);
             } else {
             	context.status(404);
             }
