@@ -4,18 +4,24 @@ import java.util.List;
 import java.sql.SQLException;
 
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.QueryBuilder;
 import exception.MyException;
 import model.Model;
+import model.User;
+
 
 public interface Service<T extends Model> {
 	Dao<T,Integer> dao();
-	
-	default List<T> findAll() {
+	default List<T> findAll(int pageNumber, int pageSize) {
 		try {
-			return dao().queryForAll();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw new MyException("SQL ex", e);
+			try {
+				QueryBuilder queryBuilder = dao().queryBuilder().offset((long) pageNumber * pageSize).limit((long) pageSize);
+				return queryBuilder.query();
+			} catch (SQLException e) {
+				throw new MyException(e.getMessage());
+			}
+		} catch (Exception e) {
+			throw new MyException(e.getMessage());
 		}
 	}
 	default List<T> findBy(String columnName, Object value) {
@@ -62,5 +68,4 @@ public interface Service<T extends Model> {
             throw new MyException("SQL ex", e);
         }
     }
-	
 }

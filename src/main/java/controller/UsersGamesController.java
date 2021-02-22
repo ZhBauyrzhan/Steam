@@ -10,6 +10,9 @@ import model.User;
 import model.UsersGames;
 import service.UsersGamesService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class UsersGamesController extends AbstractController<UsersGames>{
 	private final UsersGamesService service;
 	private final ObjectMapper objectMapper;
@@ -18,19 +21,22 @@ public class UsersGamesController extends AbstractController<UsersGames>{
         this.service = service;
         this.objectMapper = objectMapper;
 	}
+
 	@Override
-	public Boolean checkRights(UsersGames model, Context context) {
-		String senderLogin = context.basicAuthCredentials().getUsername();
-		String senderPassword= context.basicAuthCredentials().getPassword();
-		User user = service.findUserByLogin(senderLogin);
-		System.out.println(  );
-		return ((BCrypt.checkpw(senderPassword, user.getPassword()))
-			|| user.getRole().equals(User.FIELD_ADMIN));
+	public void getAll(Context context, int pageNumber, int pageSize) {
+		try {
+			if(checkRights(context)) {
+				super.getAll(context, pageNumber, pageSize);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			context.status(500);
+		}
 	}
 	@Override
 	public void getOne(Context context, int id) {
 		UsersGames model = service.findById(id);
-		if(checkRights(model, context)) {
+		if(checkRights(context)) {
 			super.getOne(context, id);
 		} else {
 			context.status(403);
@@ -39,7 +45,7 @@ public class UsersGamesController extends AbstractController<UsersGames>{
 	@Override
     public void delete(Context context, int id) {
         UsersGames model = service.findById(id);
-        if(checkRights(model, context)) {
+        if(checkRights(context)) {
         	service.delete(model);
         	context.status(204);
         }
@@ -48,7 +54,7 @@ public class UsersGamesController extends AbstractController<UsersGames>{
     public void post(Context context) {
         try {
             UsersGames model = objectMapper.readValue(context.body(), UsersGames.class);
-            if(checkRights(model, context)) {
+            if(checkRights(context)) {
 				service.save(model);
 				UsersGames saved = service.findById(model.getId());
 				context.result(objectMapper.writeValueAsString(saved));

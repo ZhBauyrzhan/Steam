@@ -1,7 +1,5 @@
 import configuration.JdbcDataBaseConfiguration;
 
-
-
 import controller.UserController;
 import controller.UsersGamesController;
 
@@ -26,9 +24,9 @@ import model.Game;
 import model.User;
 import model.UsersGames;
 import service.GameService;
-import service.Service;
 import service.UserService;
 import service.UsersGamesService;
+
 
 public class Main {	
 	public static void main(String[] args) throws SQLException{
@@ -38,7 +36,7 @@ public class Main {
         Dao<Game, Integer> gameDao = DaoManager.createDao(configuration.connectionSource(), Game.class);
 		Dao<UsersGames, Integer> usersGamesDao = DaoManager.createDao(configuration.connectionSource(), UsersGames.class);
         
-        Service<User> userService = new UserService(userDao);
+        UserService userService = new UserService(userDao);
         GameService gameService = new GameService(gameDao, userDao);
         UsersGamesService usersGamesService = new UsersGamesService(usersGamesDao, userDao,gameDao);     
         
@@ -59,7 +57,10 @@ public class Main {
         Controller<Game> gameController = new GameController(gameService, objectMapper);
         Controller<UsersGames> usersGamesController = new UsersGamesController(usersGamesService, objectMapper);
         app.routes( () -> {
-        	path("user", () -> {
+        	path("users", () -> {
+        	    get(ctx -> userController.getAll(ctx,
+                        (ctx.queryParam("page", Integer.class).getOrNull() != null ? ctx.queryParam("page", Integer.class).get()-1 : 0),
+                        (ctx.queryParam("size", Integer.class).getOrNull() != null ? ctx.queryParam("size", Integer.class).get() : 5 )));
                 post(userController::post);
                 path(":id", () -> {
                     get(ctx -> userController.getOne(ctx, ctx.pathParam("id", Integer.class).get()));
@@ -67,15 +68,21 @@ public class Main {
                     delete(ctx -> userController.delete(ctx, ctx.pathParam("id", Integer.class).get()));
                 });
             });
-        	path("game", () -> {
+        	path("games", () -> {
+                get(ctx -> gameController.getAll(ctx,
+                        (ctx.queryParam("page", Integer.class).getOrNull() != null ? ctx.queryParam("page", Integer.class).get()-1 : 0),
+                        (ctx.queryParam("size", Integer.class).getOrNull() != null ? ctx.queryParam("size", Integer.class).get() : 5 )));
                 post(gameController::post);
                 path(":id", () -> {
                     get(ctx -> gameController.getOne(ctx, ctx.pathParam("id", Integer.class).get()));
-                    patch(ctx -> gameController.patch(ctx, ctx.pathParam("id", Integer.class).get()));
+                    patch(ctx -> gameController.patch(ctx, ctx.pathParam(   "id", Integer.class).get()));
                     delete(ctx -> gameController.delete(ctx, ctx.pathParam("id", Integer.class).get()));
                 });
             });
         	path("usersGames", () -> {
+                get(ctx -> usersGamesController.getAll(ctx,
+                        (ctx.queryParam("page", Integer.class).getOrNull() != null ? ctx.queryParam("page", Integer.class).get()-1 : 0),
+                        (ctx.queryParam("size", Integer.class).getOrNull() != null ? ctx.queryParam("size", Integer.class).get() : 5 )));
                 post(usersGamesController::post);
                 path(":id", () -> {
                 

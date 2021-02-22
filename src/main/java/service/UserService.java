@@ -8,6 +8,6 @@ import model.User;
 
 public class UserService extends AbstractService<User>{
 	public UserService(Dao<User, Integer> userDao) {
-		super(userDao);
+		super(userDao, userDao);
 	}
 }

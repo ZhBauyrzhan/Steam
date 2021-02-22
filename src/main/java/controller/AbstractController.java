@@ -6,23 +6,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javalin.http.Context;
 import model.Model;
+import model.User;
+import org.mindrot.jbcrypt.BCrypt;
+import service.AbstractService;
 import service.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class AbstractController<T extends Model> implements Controller<T> {
-    private final Service<T> service;
+    private final AbstractService<T> service;
     private final ObjectMapper objectMapper;
     private final Class<T> clazz;
 
-    public AbstractController(Service<T> service, ObjectMapper objectMapper, Class<T> clazz) {
+    public AbstractController(AbstractService<T> service, ObjectMapper objectMapper, Class<T> clazz) {
         this.service = service;
         this.objectMapper = objectMapper;
         this.clazz = clazz;
     }
-
+    public Boolean checkRights(Context context) {
+        String senderLogin = context.basicAuthCredentials().getUsername();
+        String senderPassword= context.basicAuthCredentials().getPassword();
+        User user = service.findUserByLogin(senderLogin);
+        System.out.println();
+        return ((BCrypt.checkpw(senderPassword, user.getPassword()))
+                || user.getRole().equals(User.FIELD_ADMIN));
+    }
     @Override
-    public void getAll(Context context) {
+    public void getAll(Context context, int pageNumber, int pageSize) {
         try {
-            context.result(objectMapper.writeValueAsString(service.findAll()));
+            List<T> returnedModels = service.findAll(pageNumber, pageSize);
+            context.result(objectMapper.writeValueAsString(returnedModels));
         } catch (Exception e) {
             e.printStackTrace();
             context.status(500);

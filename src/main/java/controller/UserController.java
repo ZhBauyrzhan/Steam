@@ -7,32 +7,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javalin.http.Context;
 import model.User;
+import service.AbstractService;
 import service.Service;
 
 public class UserController extends AbstractController<User>{
-	 private final Service<User> service;
+	 private final AbstractService<User> service;
 	 private final ObjectMapper objectMapper;
 
-	public UserController(Service<User> service, ObjectMapper objectMapper) {
+	public UserController(AbstractService<User> service, ObjectMapper objectMapper) {
         super(service, objectMapper, User.class);
         this.service = service;
         this.objectMapper = objectMapper;
     }
-	@Override
-	public Boolean checkRights(User model, Context context) {
-		String senderLogin = context.basicAuthCredentials().getUsername();
-		String senderPassword= context.basicAuthCredentials().getPassword();
-		return model.getRole() == User.FIELD_ADMIN 
-				|| (BCrypt.checkpw(senderPassword, model.getPassword()) && model.getLogin().equals(senderLogin));
+
+    @Override
+    public void getAll(Context context, int pageNumber, int pageSize) {
+        try {
+            if(checkRights(context)) {
+                super.getAll(context, pageNumber, pageSize);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            context.status(500);
+        }
 	}
+
     @Override
     public void getOne(Context context, int id) {
-        User model = service.findById(id);
+	    User model = service.findById(id);
         if (model == null) {
             context.status(404);
         } else {
             try {
-            	if(checkRights(model, context))
+            	if(checkRights(context))
             		context.result(objectMapper.writeValueAsString(model));
             	else 
             		context.status(404);
@@ -47,7 +54,7 @@ public class UserController extends AbstractController<User>{
     public void patch(Context context, int id) {
         try {
             User model = objectMapper.readValue(context.body(), User.class);
-            if(checkRights(model, context)) {
+            if(checkRights(context)) {
             	model.setId(id);
                 service.update(model);
                 context.status(200);
@@ -63,7 +70,7 @@ public class UserController extends AbstractController<User>{
     @Override
     public void delete(Context context, int id) {
         User model = service.findById(id);
-        if(checkRights(model, context)) {
+        if(checkRights(context)) {
         	service.delete(model);
         	context.status(204);
         } else {
